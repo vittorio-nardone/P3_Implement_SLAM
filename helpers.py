@@ -53,26 +53,31 @@ def display_world(world_size, position, landmarks=None):
 # collected over a specified number of time steps, N
 #
 def make_data(N, num_landmarks, world_size, measurement_range, motion_noise, 
-              measurement_noise, distance):
+              measurement_noise, distance, sim_mode = False):
 
-
-    # check if data has been made
+    # check that data has been made
+    try:
+        check_for_data(num_landmarks, world_size, measurement_range, motion_noise, measurement_noise)
+    except ValueError:
+        print('Error: You must implement the sense function in robot_class.py.')
+        return []
+    
     complete = False
+    
+    r = robot(world_size, measurement_range, motion_noise, measurement_noise)
+    r.make_landmarks(num_landmarks)
 
     while not complete:
 
         data = []
 
-        # make robot and landmarks
-        r = robot(world_size, measurement_range, motion_noise, measurement_noise)
-        r.make_landmarks(num_landmarks)
         seen = [False for row in range(num_landmarks)]
     
         # guess an initial motion
         orientation = random.random() * 2.0 * pi
         dx = cos(orientation) * distance
         dy = sin(orientation) * distance
-    
+            
         for k in range(N-1):
     
             # collect sensor measurements in a list, Z
@@ -95,9 +100,23 @@ def make_data(N, num_landmarks, world_size, measurement_range, motion_noise,
         # we are done when all landmarks were observed; otherwise re-run
         complete = (sum(seen) == num_landmarks)
 
-    print(' ')
-    print('Landmarks: ', r.landmarks)
-    print(r)
-
+    if (sim_mode == False):    
+        print(' ')
+        print('Landmarks: ', r.landmarks)
+        print(r)
+    else:
+        data = (data, r)
 
     return data
+
+
+def check_for_data(num_landmarks, world_size, measurement_range, motion_noise, measurement_noise):
+    # make robot and landmarks
+    r = robot(world_size, measurement_range, motion_noise, measurement_noise)
+    r.make_landmarks(num_landmarks)
+    
+    
+    # check that sense has been implemented/data has been made
+    test_Z = r.sense()
+    if(test_Z is None):
+        raise ValueError
